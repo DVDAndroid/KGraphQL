@@ -3,6 +3,7 @@ plugins {
     kotlin("jvm") version "1.6.10"
     kotlin("plugin.serialization") version "1.5.0"
     id("org.jetbrains.dokka") version "1.4.32"
+    `maven-publish`
 }
 
 val caffeine_version: String by project
@@ -67,38 +68,14 @@ val dokkaJar by tasks.creating(Jar::class) {
 }
 
 publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            artifactId = project.name
-            from(components["java"])
-            artifact(sourcesJar)
-            artifact(dokkaJar)
-            pom {
-                name.set("KGraphQL")
-                description.set("KGraphQL is a Kotlin implementation of GraphQL. It provides a rich DSL to set up the GraphQL schema.")
-                url.set("https://kgraphql.io/")
-                organization {
-                    name.set("aPureBase")
-                    url.set("http://apurebase.com/")
-                }
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://github.com/aPureBase/KGraphQL/blob/main/LICENSE.md")
-                    }
-                }
-                developers {
-                    developer {
-                        id.set("jeggy")
-                        name.set("Jógvan Olsen")
-                        email.set("jol@apurebase.com")
-                    }
-                }
-                scm {
-                    connection.set("scm:git:https://github.com/aPureBase/KGraphQL.git")
-                    developerConnection.set("scm:git:https://github.com/aPureBase/KGraphQL.git")
-                    url.set("https://github.com/aPureBase/KGraphQL/")
-                    tag.set("HEAD")
+    repositories {
+        if (System.getenv("CI")?.toBoolean() == true) {
+            maven {
+                name = "GithubPackages"
+                url = uri("https://maven.pkg.github.com/dvdandroid/KGraphQL")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GITHUB_TOKEN")
                 }
             }
         }
