@@ -333,8 +333,10 @@ class SchemaCompilation(
 
         return operation.argumentsDescriptor.map { (name, kType) ->
             val inputValue = inputValues.find { it.name == name }
-            val kqlInput = inputValue ?: InputValueDef(kType.jvmErasure, name)
-            val inputType = handlePossiblyWrappedType(inputValue?.kType ?: kType, TypeCategory.INPUT)
+            val kqlInput = inputValue?.run {
+                InputValueDef(kClass, name, kType = kClass.createType())
+            } ?: InputValueDef(kType.jvmErasure, name)
+            val inputType = handlePossiblyWrappedType(kqlInput.kType ?: kType, TypeCategory.INPUT)
             InputValue(kqlInput, inputType)
         }
     }
