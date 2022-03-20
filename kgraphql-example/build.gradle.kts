@@ -1,9 +1,8 @@
 plugins {
     base
     application
-    kotlin("jvm") version "1.5.10"
+    kotlin("jvm") version "1.6.10"
     id("org.jetbrains.dokka") version "1.4.32"
-    signing
 }
 
 val ktor_version: String by project
@@ -100,13 +99,4 @@ publishing {
             }
         }
     }
-}
-
-signing {
-    isRequired = isReleaseVersion
-    useInMemoryPgpKeys(
-        System.getenv("ORG_GRADLE_PROJECT_signingKey"),
-        System.getenv("ORG_GRADLE_PROJECT_signingPassword")
-    )
-    sign(publishing.publications["maven"])
 }

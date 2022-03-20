@@ -1,9 +1,8 @@
 
 plugins {
     base
-    kotlin("jvm") version "1.5.10"
+    kotlin("jvm") version "1.6.10"
     id("org.jetbrains.dokka") version "1.4.32"
-    signing
 }
 
 val caffeine_version: String by project
@@ -18,8 +17,6 @@ val netty_version: String by project
 val hamcrest_version: String by project
 val kluent_version: String by project
 val junit_version: String by project
-
-val isReleaseVersion = !version.toString().endsWith("SNAPSHOT")
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
@@ -113,13 +110,4 @@ publishing {
             }
         }
     }
-}
-
-signing {
-    isRequired = isReleaseVersion
-    useInMemoryPgpKeys(
-        System.getenv("ORG_GRADLE_PROJECT_signingKey"),
-        System.getenv("ORG_GRADLE_PROJECT_signingPassword")
-    )
-    sign(publishing.publications["maven"])
 }
