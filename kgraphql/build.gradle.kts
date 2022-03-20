@@ -2,7 +2,6 @@
 plugins {
     base
     kotlin("jvm") version "1.6.10"
-    id("org.jetbrains.dokka") version "1.4.32"
 }
 
 val caffeine_version: String by project
@@ -49,41 +48,5 @@ tasks {
 
     test {
         useJUnitPlatform()
-    }
-    dokkaHtml {
-        outputDirectory.set(buildDir.resolve("javadoc"))
-        dokkaSourceSets {
-            configureEach {
-                jdkVersion.set(8)
-                reportUndocumented.set(true)
-                platform.set(org.jetbrains.dokka.Platform.jvm)
-            }
-        }
-    }
-}
-
-val sourcesJar by tasks.creating(Jar::class) {
-    classifier = "sources"
-    from(sourceSets.main.get().allSource)
-}
-
-val dokkaJar by tasks.creating(Jar::class) {
-    group = JavaBasePlugin.DOCUMENTATION_GROUP
-    classifier = "javadoc"
-    from(tasks.dokkaHtml)
-}
-
-publishing {
-    repositories {
-        if (System.getenv("CI")?.toBoolean() == true) {
-            maven {
-                name = "GithubPackages"
-                url = uri("https://maven.pkg.github.com/dvdandroid/KGraphQL")
-                credentials {
-                    username = System.getenv("GITHUB_ACTOR")
-                    password = System.getenv("GITHUB_TOKEN")
-                }
-            }
-        }
     }
 }

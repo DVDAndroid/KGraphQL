@@ -17,5 +17,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}
         with:
-          arguments: publishAllPublicationsToGithubPackagesRepository
+          arguments: publish
           gradle-distribution-sha-256-sum-warning: false

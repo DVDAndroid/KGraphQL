@@ -1,11 +1,7 @@
-import de.marcphilipp.gradle.nexus.NexusPublishPlugin
-import java.time.Duration
-
 val version: String by project
 
 plugins {
     id("com.github.ben-manes.versions") version "0.39.0"
-    id("de.marcphilipp.nexus-publish") version "0.4.0"
     jacoco
     `maven-publish`
 }
@@ -21,13 +17,38 @@ subprojects {
     group = "com.apurebase"
     version = version
 
-    apply<NexusPublishPlugin>()
+    apply(plugin = "java")
+    configure<JavaPluginExtension> {
+        withJavadocJar()
+        withSourcesJar()
 
-    nexusPublishing {
-        repositories {
-            sonatype()
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(8))
         }
-        clientTimeout.set(Duration.parse("PT10M")) // 10 minutes
+    }
+
+    apply(plugin = "maven-publish")
+
+    publishing {
+        repositories {
+            if (System.getenv("CI")?.toBoolean() == true) {
+                maven {
+                    name = "GithubPackages"
+                    url = uri("https://maven.pkg.github.com/dvdandroid/KGraphQL")
+                    credentials {
+                        username = System.getenv("GITHUB_ACTOR")
+                        password = System.getenv("GITHUB_TOKEN")
+                    }
+                }
+            } else {
+                mavenLocal()
+            }
+        }
+        publications {
+            create<MavenPublication>("mavenJava") {
+                from(components["java"])
+            }
+        }
     }
 }
 
