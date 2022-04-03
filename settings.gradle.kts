@@ -1,4 +1,4 @@
 rootProject.name = "core"
 
-include("kgraphql", "kgraphql-ktor")
+include("kgraphql", "kgraphql-ktor", "kgraphql-annotations")
 

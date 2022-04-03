@@ -30,7 +30,7 @@ dependencies {
     implementation("com.github.ben-manes.caffeine:caffeine:$caffeine_version")
     implementation("com.apurebase:DeferredJsonBuilder:$deferredJsonBuilder_version")
     api("de.nidomiro:KDataLoader:$kDataLoader_version")
-
+    api(project(":kgraphql-annotations"))
 
     testImplementation("io.netty:netty-all:$netty_version")
     testImplementation("org.hamcrest:hamcrest:$hamcrest_version")

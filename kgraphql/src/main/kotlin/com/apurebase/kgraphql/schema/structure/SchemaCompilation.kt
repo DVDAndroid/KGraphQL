@@ -15,14 +15,9 @@ import com.apurebase.kgraphql.schema.introspection.NotIntrospected
 import com.apurebase.kgraphql.schema.introspection.SchemaProxy
 import com.apurebase.kgraphql.schema.introspection.TypeKind
 import com.apurebase.kgraphql.schema.introspection.__Schema
-import com.apurebase.kgraphql.schema.model.BaseOperationDef
-import com.apurebase.kgraphql.schema.model.FunctionWrapper
-import com.apurebase.kgraphql.schema.model.InputValueDef
-import com.apurebase.kgraphql.schema.model.PropertyDef
-import com.apurebase.kgraphql.schema.model.QueryDef
-import com.apurebase.kgraphql.schema.model.SchemaDefinition
-import com.apurebase.kgraphql.schema.model.Transformation
-import com.apurebase.kgraphql.schema.model.TypeDef
+import com.apurebase.kgraphql.schema.model.*
+import com.dvd.kgraphql.annotations.KGraphQLFieldIgnore
+import com.dvd.kgraphql.annotations.KGraphQLInputFieldIgnore
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
@@ -263,6 +258,7 @@ class SchemaCompilation(
 
         val kotlinFields = kClass.memberProperties
                 .filter { field -> field.visibility == KVisibility.PUBLIC }
+                .filter { it.findAnnotation<KGraphQLFieldIgnore>() == null }
                 .filterNot { field ->  objectDefs.any { it.isIgnored(field.name) } }
                 .map { property -> handleKotlinProperty (
                         kProperty = property,
@@ -315,7 +311,10 @@ class SchemaCompilation(
         inputTypeProxies[kClass] = typeProxy
 
         val fields = if (kClass.findAnnotation<NotIntrospected>() == null) {
-            kClass.memberProperties.map { property -> handleKotlinInputProperty(property) }
+            kClass.memberProperties.mapNotNull { property ->
+                if (property.findAnnotation<KGraphQLInputFieldIgnore>() != null) return@mapNotNull null
+                else handleKotlinInputProperty(property)
+            }
         } else listOf()
 
         typeProxy.proxied = Type.Input(inputObjectDef, fields)

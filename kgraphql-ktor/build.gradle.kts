@@ -24,6 +24,7 @@ val isReleaseVersion = !version.toString().endsWith("SNAPSHOT")
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     api(project(":kgraphql"))
+    api(project(":kgraphql-annotations"))
     implementation("io.ktor:ktor-server-core:$ktor_version")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
     implementation("com.github.salomonbrys.kotson:kotson:2.5.0")

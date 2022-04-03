@@ -17,13 +17,15 @@ subprojects {
     group = "com.apurebase"
     version = version
 
-    apply(plugin = "java")
-    configure<JavaPluginExtension> {
-        withJavadocJar()
-        withSourcesJar()
+    if (!name.endsWith("annotations")) {
+        apply(plugin = "java")
+        configure<JavaPluginExtension> {
+            withJavadocJar()
+            withSourcesJar()
 
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(8))
+            toolchain {
+                languageVersion.set(JavaLanguageVersion.of(8))
+            }
         }
     }
 
@@ -44,9 +46,11 @@ subprojects {
                 mavenLocal()
             }
         }
-        publications {
-            create<MavenPublication>("mavenJava") {
-                from(components["java"])
+        if (!name.endsWith("annotations")) {
+            publications {
+                create<MavenPublication>("mavenJava") {
+                    from(components["java"])
+                }
             }
         }
     }
