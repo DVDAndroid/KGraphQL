@@ -1,7 +1,7 @@
 
 plugins {
     base
-    kotlin("jvm") version "1.6.20"
+    kotlin("jvm")
 }
 
 val caffeine_version: String by project
