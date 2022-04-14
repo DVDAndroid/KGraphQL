@@ -42,7 +42,7 @@ class GraphQL(val schema: Schema) {
     }
 
 
-    companion object Feature: ApplicationPlugin<Application, Configuration, GraphQL> {
+    companion object Feature: BaseApplicationPlugin<Application, Configuration, GraphQL> {
         override val key = AttributeKey<GraphQL>("KGraphQL")
 
         override fun install(pipeline: Application, configure: Configuration.() -> Unit): GraphQL {
