@@ -297,7 +297,14 @@ class SchemaCompilation(
             throw SchemaException("Illegal name '${field.name}'. Names starting with '__' are reserved for introspection system")
         }
 
-        val allFields = declaredFields + __typenameField
+        val ktTypenameResolver: suspend (Any) -> String? = { value: Any ->
+            schemaProxy.typeByKClass(value.javaClass.kotlin)?.kClass?.qualifiedName
+        }
+        val __ktTypeNameField = handleOperation(
+            PropertyDef.Function<Nothing, String?> ("__ktTypename", FunctionWrapper.on(ktTypenameResolver, true))
+        )
+
+        val allFields = declaredFields + __typenameField + __ktTypeNameField
         typeProxy.proxied = if(kind == TypeKind.OBJECT) Type.Object(objectDef, allFields) else Type.Interface(objectDef, allFields)
         return typeProxy
     }
@@ -355,8 +362,13 @@ class SchemaCompilation(
                 schemaProxy.typeByKClass(value.javaClass.kotlin)?.name
             }, true))
         )
+        val __ktTypenameField = handleOperation (
+            PropertyDef.Function<Nothing, String?> ("__ktTypename", FunctionWrapper.on( { value: Any ->
+                schemaProxy.typeByKClass(value.javaClass.kotlin)?.kClass?.qualifiedName
+            }, true))
+        )
 
-        val unionType = Type.Union(union, __typenameField, possibleTypes)
+        val unionType = Type.Union(union, __typenameField, __ktTypenameField, possibleTypes)
         unions.add(unionType)
         return unionType
     }

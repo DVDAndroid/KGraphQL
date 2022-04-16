@@ -225,8 +225,9 @@ interface Type : __Type {
     class Union(
             kqlType: TypeDef.Union,
             typenameResolver: Field,
+            kTtypenameResolver: Field,
             override val possibleTypes: List<Type>
-    ) : ComplexType(listOf(typenameResolver)) {
+    ) : ComplexType(listOf(typenameResolver, kTtypenameResolver)) {
         override val kClass: KClass<*>? = null
 
         override val kind: TypeKind = TypeKind.UNION
