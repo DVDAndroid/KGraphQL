@@ -25,14 +25,14 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     api(project(":kgraphql"))
     api(project(":kgraphql-annotations"))
-    implementation("io.ktor:ktor-server-core:$ktor_version")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
     implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
+    implementation("io.ktor:ktor-server-core-jvm:2.0.2")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit_version")
     testImplementation("org.amshove.kluent:kluent:$kluent_version")
-    testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("io.ktor:ktor-server-auth:$ktor_version")
+    testImplementation("io.ktor:ktor-server-test-host-jvm:2.0.2")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit_version")
 }
 

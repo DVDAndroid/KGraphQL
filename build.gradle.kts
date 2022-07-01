@@ -1,9 +1,9 @@
 val version: String by project
 
 plugins {
-    kotlin("multiplatform") version "1.6.10" apply false
-    kotlin("jvm") version "1.6.10" apply false
-    kotlin("plugin.serialization") version "1.6.10" apply false
+    kotlin("multiplatform") version "1.7.0" apply false
+    kotlin("jvm") version "1.7.0" apply false
+    kotlin("plugin.serialization") version "1.7.0" apply false
 
     id("com.github.ben-manes.versions") version "0.39.0"
     jacoco
