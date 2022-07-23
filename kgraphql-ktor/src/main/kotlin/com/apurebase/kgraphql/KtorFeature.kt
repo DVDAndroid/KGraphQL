@@ -85,7 +85,11 @@ class GraphQL(val schema: Schema) {
                     }
                 } catch (e: Throwable) {
                     if (e is GraphQLError) {
-                        context.respond(HttpStatusCode.OK, e.serialize())
+                        context.respondText(
+                            contentType = ContentType.Application.Json,
+                            status = HttpStatusCode.OK,
+                            text = e.serialize(),
+                        )
                     } else throw e
                 }
             }
