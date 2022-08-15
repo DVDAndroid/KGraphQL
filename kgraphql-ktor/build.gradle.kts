@@ -32,7 +32,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit_version")
     testImplementation("org.amshove.kluent:kluent:$kluent_version")
     testImplementation("io.ktor:ktor-server-auth:$ktor_version")
-    testImplementation("io.ktor:ktor-server-test-host-jvm:2.0.2")
+    testImplementation("io.ktor:ktor-server-test-host-jvm:$ktor_version")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit_version")
 }
 

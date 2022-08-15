@@ -9,8 +9,10 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.*
+import kotlinx.coroutines.Dispatchers
 import java.nio.charset.Charset
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
 import kotlinx.serialization.json.Json.Default.decodeFromString
 
@@ -104,7 +106,9 @@ class GraphQL(val schema: Schema) {
 
             val contentType = request.contentType()
             val suitableCharset = contentType.charset() ?: contentType.defaultCharset()
-            return receiveStream().bufferedReader(charset = suitableCharset).readText()
+            return withContext(Dispatchers.IO) {
+                receiveStream().bufferedReader(charset = suitableCharset).readText()
+            }
         }
 
         private fun GraphQLError.serialize(): String = buildJsonObject {
