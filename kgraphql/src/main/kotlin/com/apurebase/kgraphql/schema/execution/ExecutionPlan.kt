@@ -13,5 +13,5 @@ class ExecutionPlan(
 data class ExecutionResult(
         val executionPlan: ExecutionPlan,
         val millis: Long,
-        val result: String?,
+        val result: String,
 )

@@ -73,11 +73,20 @@ class GraphQL(val schema: Schema) {
                             val ctx = context {
                                 config.contextSetup?.invoke(this, call)
                             }
-                            val (plan, time, result) = schema.execute(request.query, request.variables.toString(), ctx)
-                            checkNotNull(result) { "empty (null) result from graphql request" }
+                            try {
+                                val (plan, time, result) = schema.execute(request.query, request.variables.toString(), ctx)
 
-                            config.metricsBlock?.invoke(plan, time, result)
-                            call.respondText(result, contentType = ContentType.Application.Json)
+                                config.metricsBlock?.invoke(plan, time, result)
+                                call.respondText(result, contentType = ContentType.Application.Json)
+                            } catch (e: Exception) {
+                                if (e is GraphQLError) {
+                                    context.respondText(
+                                            contentType = ContentType.Application.Json,
+                                            status = HttpStatusCode.OK,
+                                            text = e.serialize(),
+                                    )
+                                } else throw e
+                            }
                         }
                         if (config.playground) get {
                             @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
@@ -91,22 +100,6 @@ class GraphQL(val schema: Schema) {
             }
 
             pipeline.pluginOrNull(Routing)?.apply(routing) ?: pipeline.install(Routing, routing)
-
-            pipeline.intercept(ApplicationCallPipeline.Monitoring) {
-                try {
-                    coroutineScope {
-                        proceed()
-                    }
-                } catch (e: Throwable) {
-                    if (e is GraphQLError) {
-                        context.respondText(
-                                contentType = ContentType.Application.Json,
-                                status = HttpStatusCode.OK,
-                                text = e.serialize(),
-                        )
-                    } else throw e
-                }
-            }
             return GraphQL(schema)
         }
 
@@ -124,7 +117,7 @@ class GraphQL(val schema: Schema) {
         }
 
         private fun GraphQLError.serialize(): String = buildJsonObject {
-            put("errors", buildJsonArray {
+            put("error", buildJsonArray {
                 addJsonObject {
                     put("message", message)
                     put("locations", buildJsonArray {
@@ -134,9 +127,6 @@ class GraphQL(val schema: Schema) {
                                 put("column", it.column)
                             }
                         }
-                    })
-                    put("path", buildJsonArray {
-                        // TODO: Build this path. https://spec.graphql.org/June2018/#example-90475
                     })
                 }
             })
