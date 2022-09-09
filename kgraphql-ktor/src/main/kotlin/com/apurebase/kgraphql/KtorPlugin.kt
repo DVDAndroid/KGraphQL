@@ -2,7 +2,7 @@ package com.apurebase.kgraphql
 
 import com.apurebase.kgraphql.schema.dsl.SchemaBuilder
 import com.apurebase.kgraphql.schema.dsl.SchemaConfigurationDSL
-import com.apurebase.kgraphql.schema.execution.ExecutionPlan
+import com.apurebase.kgraphql.schema.model.ast.DefinitionNode.ExecutableDefinitionNode.OperationDefinitionNode
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
 import java.nio.charset.Charset
+import kotlin.time.Duration
 
 val KGraphQLPlugin = createApplicationPlugin("KGraphQL", ::KtorKGraphQLConfiguration) {
     val schema = KGraphQL.schema {
@@ -29,9 +30,9 @@ val KGraphQLPlugin = createApplicationPlugin("KGraphQL", ::KtorKGraphQLConfigura
                         this@createApplicationPlugin.pluginConfig.contextSetup?.invoke(this, call)
                     }
                     try {
-                        val (plan, time, result) = schema.execute(request.query, request.variables.toString(), ctx)
+                        val (operationInfo, duration, result) = schema.execute(request.query, request.variables.toString(), ctx)
 
-                        this@createApplicationPlugin.pluginConfig.metricsBlock?.invoke(plan, time, result)
+                        this@createApplicationPlugin.pluginConfig.metricsBlock?.onResult(operationInfo, duration, result)
                         call.respondText(result, contentType = ContentType.Application.Json)
                     } catch (e: Exception) {
                         if (e is GraphQLError) {
@@ -57,6 +58,10 @@ val KGraphQLPlugin = createApplicationPlugin("KGraphQL", ::KtorKGraphQLConfigura
     application.routing(routing)
 }
 
+fun interface GraphQLMetrics {
+    fun onResult(operationInfo: OperationDefinitionNode, duration: Duration, result: String)
+}
+
 class KtorKGraphQLConfiguration : SchemaConfigurationDSL() {
     fun schema(block: SchemaBuilder.() -> Unit) {
         schemaBlock = block
@@ -77,14 +82,14 @@ class KtorKGraphQLConfiguration : SchemaConfigurationDSL() {
         wrapWith = block
     }
 
-    fun metrics(block: (plan: ExecutionPlan, time: Long, result: String?) -> Unit) {
+    fun metrics(block: GraphQLMetrics) {
         metricsBlock = block
     }
 
     internal var contextSetup: (ContextBuilder.(ApplicationCall) -> Unit)? = null
     internal var wrapWith: (Route.(next: Route.() -> Unit) -> Unit)? = null
     internal var schemaBlock: (SchemaBuilder.() -> Unit)? = null
-    internal var metricsBlock: ((plan: ExecutionPlan, time: Long, result: String?) -> Unit)? = null
+    internal var metricsBlock: GraphQLMetrics? = null
 
 }
 

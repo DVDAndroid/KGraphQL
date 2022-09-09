@@ -65,7 +65,7 @@ class DefaultSchema (
             )
         }
 
-        ExecutionResult(plan, duration.inWholeMilliseconds, result)
+        ExecutionResult(plan.operation, duration, result)
     }
 
     private fun String.isIntrospection() = this.contains("__schema") || this.contains("__type")

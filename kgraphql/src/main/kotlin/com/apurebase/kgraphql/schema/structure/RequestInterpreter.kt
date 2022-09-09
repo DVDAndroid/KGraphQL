@@ -89,7 +89,7 @@ class RequestInterpreter(val schemaModel: SchemaModel) {
 
         return ExecutionPlan(
                 options,
-                operation.operation,
+                operation,
                 operation.selectionSet.selections.map {
                     root.handleSelection(it as FieldNode, ctx, operation.variableDefinitions)
                 }
