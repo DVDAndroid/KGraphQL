@@ -1,9 +1,9 @@
 package com.apurebase.kgraphql
 
 import com.apurebase.kgraphql.schema.dsl.SchemaBuilder
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
-import io.ktor.http.*
 import io.ktor.server.testing.*
 
 
@@ -20,7 +20,7 @@ open class KtorTest {
                         }
                     }
                 }
-                install(GraphQL) {
+                install(KGraphQLPlugin) {
                     context(ctxBuilder)
                     wrap { next ->
                         authenticate(optional = true) { next() }
@@ -35,7 +35,7 @@ open class KtorTest {
                     setBody(when(type.toLowerCase().trim()) {
                         "query" -> graphqlQuery(kraph).build()
                         "mutation" -> graphqlMutation(kraph).build()
-                        else -> throw TODO("$type is not a valid graphql operation type")
+                        else -> error("$type is not a valid graphql operation type")
                     }.also(::println))
                 }.response.content!!
             }
