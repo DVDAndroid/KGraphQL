@@ -4,11 +4,12 @@ import com.apurebase.kgraphql.Context
 import com.apurebase.kgraphql.GraphQLError
 import com.apurebase.kgraphql.configuration.SchemaConfiguration
 import com.apurebase.kgraphql.request.CachingDocumentParser
-import com.apurebase.kgraphql.request.VariablesJson
-import com.apurebase.kgraphql.schema.introspection.__Schema
 import com.apurebase.kgraphql.request.Parser
+import com.apurebase.kgraphql.request.VariablesJson
 import com.apurebase.kgraphql.schema.execution.*
-import com.apurebase.kgraphql.schema.execution.Executor.*
+import com.apurebase.kgraphql.schema.execution.Executor.DataLoaderPrepared
+import com.apurebase.kgraphql.schema.execution.Executor.Parallel
+import com.apurebase.kgraphql.schema.introspection.__Schema
 import com.apurebase.kgraphql.schema.model.ast.NameNode
 import com.apurebase.kgraphql.schema.structure.LookupSchema
 import com.apurebase.kgraphql.schema.structure.RequestInterpreter
@@ -18,6 +19,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.jvm.jvmErasure
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 class DefaultSchema (
         override val configuration: SchemaConfiguration,
@@ -35,14 +38,15 @@ class DefaultSchema (
         DataLoaderPrepared -> DataLoaderPreparedRequestExecutor(this)
     }
 
-     private val requestInterpreter : RequestInterpreter = RequestInterpreter(model)
+    private val requestInterpreter: RequestInterpreter = RequestInterpreter(model)
 
     private val cacheParser: CachingDocumentParser by lazy { CachingDocumentParser(configuration.documentParserCacheMaximumSize) }
 
-    override suspend fun execute(request: String, variables: String?, context: Context, options: ExecutionOptions): String = coroutineScope {
+    @OptIn(ExperimentalTime::class)
+    override suspend fun execute(request: String, variables: String?, context: Context, options: ExecutionOptions): ExecutionResult = coroutineScope {
         val parsedVariables = variables
-            ?.let { VariablesJson.Defined(configuration.objectMapper, variables) }
-            ?: VariablesJson.Empty()
+                ?.let { VariablesJson.Defined(configuration.objectMapper, variables) }
+                ?: VariablesJson.Empty()
 
         if (!configuration.introspection && request.isIntrospection()) {
             throw GraphQLError("GraphQL introspection is not allowed")
@@ -52,11 +56,16 @@ class DefaultSchema (
 
         val executor = options.executor?.let(this@DefaultSchema::getExecutor) ?: defaultRequestExecutor
 
-        executor.suspendExecute(
-            plan = requestInterpreter.createExecutionPlan(document, parsedVariables, options),
-            variables = parsedVariables,
-            context = context
-        )
+        val plan = requestInterpreter.createExecutionPlan(document, parsedVariables, options)
+        val (result, duration) = measureTimedValue {
+            executor.suspendExecute(
+                    plan = plan,
+                    variables = parsedVariables,
+                    context = context
+            )
+        }
+
+        ExecutionResult(plan, duration.inWholeMilliseconds, result)
     }
 
     private fun String.isIntrospection() = this.contains("__schema") || this.contains("__type")

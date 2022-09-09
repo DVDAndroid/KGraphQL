@@ -1,21 +1,21 @@
 package com.apurebase.kgraphql.schema.structure
 
+import com.apurebase.kgraphql.GraphQLError
 import com.apurebase.kgraphql.request.VariablesJson
 import com.apurebase.kgraphql.schema.DefaultSchema.Companion.OPERATION_NAME_PARAM
 import com.apurebase.kgraphql.schema.directive.Directive
 import com.apurebase.kgraphql.schema.execution.Execution
+import com.apurebase.kgraphql.schema.execution.ExecutionOptions
 import com.apurebase.kgraphql.schema.execution.ExecutionPlan
 import com.apurebase.kgraphql.schema.execution.TypeCondition
-import com.apurebase.kgraphql.schema.model.ast.DefinitionNode.*
+import com.apurebase.kgraphql.schema.model.ast.*
+import com.apurebase.kgraphql.schema.model.ast.DefinitionNode.ExecutableDefinitionNode
 import com.apurebase.kgraphql.schema.model.ast.DefinitionNode.ExecutableDefinitionNode.FragmentDefinitionNode
 import com.apurebase.kgraphql.schema.model.ast.DefinitionNode.ExecutableDefinitionNode.OperationDefinitionNode
 import com.apurebase.kgraphql.schema.model.ast.SelectionNode.FieldNode
 import com.apurebase.kgraphql.schema.model.ast.SelectionNode.FragmentNode
 import com.apurebase.kgraphql.schema.model.ast.SelectionNode.FragmentNode.FragmentSpreadNode
 import com.apurebase.kgraphql.schema.model.ast.SelectionNode.FragmentNode.InlineFragmentNode
-import com.apurebase.kgraphql.GraphQLError
-import com.apurebase.kgraphql.schema.execution.ExecutionOptions
-import com.apurebase.kgraphql.schema.model.ast.*
 import java.util.*
 import kotlin.reflect.full.starProjectedType
 
@@ -88,10 +88,11 @@ class RequestInterpreter(val schemaModel: SchemaModel) {
         val ctx = InterpreterContext(fragmentDefinitions)
 
         return ExecutionPlan(
-            options,
-            operation.selectionSet.selections.map {
-                root.handleSelection(it as FieldNode, ctx, operation.variableDefinitions)
-            }
+                options,
+                operation.operation,
+                operation.selectionSet.selections.map {
+                    root.handleSelection(it as FieldNode, ctx, operation.variableDefinitions)
+                }
         ).also {
             it.isSubscription = operation.operation == OperationTypeNode.SUBSCRIPTION
         }

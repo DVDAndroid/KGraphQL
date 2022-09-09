@@ -3,22 +3,26 @@ package com.apurebase.kgraphql
 import com.apurebase.kgraphql.schema.Schema
 import com.apurebase.kgraphql.schema.dsl.SchemaBuilder
 import com.apurebase.kgraphql.schema.dsl.SchemaConfigurationDSL
-import io.ktor.server.application.*
+import com.apurebase.kgraphql.schema.execution.ExecutionPlan
 import io.ktor.http.*
+import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.*
 import kotlinx.coroutines.Dispatchers
-import java.nio.charset.Charset
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.*
 import kotlinx.serialization.json.Json.Default.decodeFromString
+import kotlinx.serialization.json.addJsonObject
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import java.nio.charset.Charset
 
 class GraphQL(val schema: Schema) {
 
-    class Configuration: SchemaConfigurationDSL() {
+    class Configuration : SchemaConfigurationDSL() {
         fun schema(block: SchemaBuilder.() -> Unit) {
             schemaBlock = block
         }
@@ -38,14 +42,19 @@ class GraphQL(val schema: Schema) {
             wrapWith = block
         }
 
+        fun metrics(block: (plan: ExecutionPlan, time: Long, result: String?) -> Unit) {
+            metricsBlock = block
+        }
+
         internal var contextSetup: (ContextBuilder.(ApplicationCall) -> Unit)? = null
         internal var wrapWith: (Route.(next: Route.() -> Unit) -> Unit)? = null
         internal var schemaBlock: (SchemaBuilder.() -> Unit)? = null
+        internal var metricsBlock: ((plan: ExecutionPlan, time: Long, result: String?) -> Unit)? = null
 
     }
 
 
-    companion object Feature: BaseApplicationPlugin<Application, Configuration, GraphQL> {
+    companion object Feature : BaseApplicationPlugin<Application, Configuration, GraphQL> {
         override val key = AttributeKey<GraphQL>("KGraphQL")
 
         override fun install(pipeline: Application, configure: Configuration.() -> Unit): GraphQL {
@@ -64,7 +73,10 @@ class GraphQL(val schema: Schema) {
                             val ctx = context {
                                 config.contextSetup?.invoke(this, call)
                             }
-                            val result = schema.execute(request.query, request.variables.toString(), ctx)
+                            val (plan, time, result) = schema.execute(request.query, request.variables.toString(), ctx)
+                            checkNotNull(result) { "empty (null) result from graphql request" }
+
+                            config.metricsBlock?.invoke(plan, time, result)
                             call.respondText(result, contentType = ContentType.Application.Json)
                         }
                         if (config.playground) get {
@@ -88,9 +100,9 @@ class GraphQL(val schema: Schema) {
                 } catch (e: Throwable) {
                     if (e is GraphQLError) {
                         context.respondText(
-                            contentType = ContentType.Application.Json,
-                            status = HttpStatusCode.OK,
-                            text = e.serialize(),
+                                contentType = ContentType.Application.Json,
+                                status = HttpStatusCode.OK,
+                                text = e.serialize(),
                         )
                     } else throw e
                 }
