@@ -10,7 +10,10 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.nio.charset.Charset
 import kotlin.time.Duration
 
@@ -107,17 +110,13 @@ private suspend fun ApplicationCall.receiveTextWithCorrectEncoding(): String {
 }
 
 private fun GraphQLError.serialize(): String = buildJsonObject {
-    put("error", buildJsonArray {
-        addJsonObject {
-            put("message", message)
-            put("locations", buildJsonArray {
-                locations?.forEach {
-                    addJsonObject {
-                        put("line", it.line)
-                        put("column", it.column)
-                    }
-                }
-            })
-        }
+    put("error", buildJsonObject {
+        put("message", message)
+        locations?.map {
+            buildJsonObject {
+                put("line", it.line)
+                put("column", it.column)
+            }
+        }?.let { put("locations", JsonArray(it)) }
     })
 }.toString()
